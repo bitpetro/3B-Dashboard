@@ -24,7 +24,7 @@ export const VariableCard: React.FC<Props> = ({ variable }) => {
     variable.polarity === 'negative' ? '(-)' :
     '(0)';
 
-  // Trivium Colors mapped to Force badges
+  // Colors based on Trivium for subtle branding
   const triviumColors: Record<string, string> = {
       Grammar: "text-blue-400 border-blue-800/30 bg-blue-900/10",
       Logic: "text-purple-400 border-purple-800/30 bg-purple-900/10",
@@ -45,7 +45,7 @@ export const VariableCard: React.FC<Props> = ({ variable }) => {
             </div>
             <div className="flex items-center gap-2 mt-1">
                 <p className="text-xs font-mono text-inst-muted">{variable.scientificName}</p>
-                {/* Force Description Badge (What/How/Why) - Dominant Label */}
+                {/* Force Description Badge (Force 1: What) */}
                 <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-mono tracking-wider ${triviumColors[variable.conceptual.trivium] || 'text-gray-400'}`}>
                     {variable.conceptual.forceDescription}
                 </span>
@@ -54,7 +54,7 @@ export const VariableCard: React.FC<Props> = ({ variable }) => {
         <StatusBadge level={variable.hazardLevel} condition={variable.condition} />
       </div>
       
-      {/* Summary Block - Academic Style */}
+      {/* Summary Block */}
       <div className="mb-4 p-3 bg-inst-bg border-l-2 border-inst-muted rounded-r">
         <p className="text-sm text-inst-text font-serif leading-relaxed italic opacity-90">
           {variable.summary}
@@ -78,7 +78,7 @@ export const VariableCard: React.FC<Props> = ({ variable }) => {
              >
                  <span className="flex items-center gap-2">
                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                     3B³ System Architecture
+                     3B³ Logic ({variable.conceptual.trivium})
                  </span>
                  <span className={`transform transition-transform duration-300 ${frameworkExpanded ? 'rotate-180' : ''}`}>▼</span>
              </button>
@@ -86,7 +86,7 @@ export const VariableCard: React.FC<Props> = ({ variable }) => {
              {frameworkExpanded && (
                  <div className="bg-inst-bg p-3 border-t border-inst-border animate-in slide-in-from-top-1">
                      <div className="mb-3">
-                         <span className="block text-[9px] text-inst-muted uppercase tracking-widest mb-0.5">System Role</span>
+                         <span className="block text-[9px] text-inst-muted uppercase tracking-widest mb-0.5">Force Structure</span>
                          <p className="text-xs font-medium text-inst-text font-sans">
                              <span className={triviumColors[variable.conceptual.trivium].split(' ')[0]}>{variable.conceptual.forceDescription}</span>
                              <span className="mx-1.5 text-inst-muted">/</span> 

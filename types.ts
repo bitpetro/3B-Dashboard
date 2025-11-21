@@ -17,6 +17,8 @@ export type Polarity = 'positive' | 'negative' | 'neutral';
 
 export type TriviumType = 'Grammar' | 'Logic' | 'Rhetoric';
 
+export type StakeholderView = 'sovereign' | 'regulator' | 'investor' | 'academic' | 'developer' | 'retail';
+
 export interface ConceptualMapping {
     trivium: TriviumType;
     triviumRole: string; // e.g., "The Foundational Structure"

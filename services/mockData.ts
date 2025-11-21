@@ -1,4 +1,3 @@
-
 import { BodyType, FrameworkData, HazardLevel, Polarity } from '../types';
 
 export interface DataSource {

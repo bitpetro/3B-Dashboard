@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BodyType } from './types';
+import { BodyType, StakeholderView } from './types';
 import { getInitialData } from './services/mockData';
 import { VariableCard } from './components/VariableCard';
 import { GeospatialMap } from './components/GeospatialMap';
@@ -16,9 +16,11 @@ const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<GeminiResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (stakeholderView: StakeholderView) => {
     setIsAnalyzing(true);
-    const result = await generateStrategicDispatch(data);
+    // Clear previous analysis to show loading state clearly if needed, or keep it for smooth transition
+    // setAnalysis(null); 
+    const result = await generateStrategicDispatch(data, stakeholderView);
     setAnalysis(result);
     setIsAnalyzing(false);
   };
@@ -26,12 +28,15 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-inst-bg text-inst-text font-sans pb-20 selection:bg-inst-accent/30">
       {/* Institutional Header */}
-      <header className="border-b border-inst-border bg-inst-surface sticky top-0 z-30 shadow-lg shadow-black/20">
+      <header className="border-b border-inst-border bg-inst-surface sticky top-0 z-30 shadow-lg shadow-black/50">
         <div className="max-w-[1800px] mx-auto px-4 lg:px-6 h-16 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tighter text-inst-text leading-none">3B³ FRAMEWORK</h1>
-              <span className="text-[10px] font-mono text-inst-muted tracking-[0.25em] uppercase mt-1.5">Version 1.0 (Nov 20, 2025)</span>
+              <h1 className="text-xl font-bold tracking-tighter text-inst-text leading-none flex items-center gap-2">
+                3B³ FRAMEWORK
+                <span className="text-[9px] px-1.5 py-0.5 bg-inst-danger/10 text-inst-danger border border-inst-danger/30 rounded font-mono tracking-wider">COUNCIL-LOCKED</span>
+              </h1>
+              <span className="text-[10px] font-mono text-inst-muted tracking-[0.25em] uppercase mt-1.5">System v1.0 // Nov 20 2025</span>
             </div>
             <div className="h-8 w-px bg-inst-border mx-2 hidden md:block"></div>
             <div className="text-[10px] font-mono text-inst-accent px-2 py-1 border border-inst-accent/20 rounded bg-inst-accent/5 hidden md:flex items-center gap-2">
@@ -51,7 +56,7 @@ const App: React.FC = () => {
               onClick={() => setView('map')}
               className={`px-4 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-wide transition-all ${view === 'map' ? 'bg-inst-surface text-inst-text border border-inst-border shadow-sm font-bold' : 'text-inst-muted hover:text-inst-text opacity-70 hover:opacity-100'}`}
             >
-              Map (Turf.js)
+              GIS (Map)
             </button>
           </nav>
         </div>
@@ -63,9 +68,9 @@ const App: React.FC = () => {
         {/* Data Ticker / Status */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-inst-border pb-4">
           <div className="flex items-center gap-6 text-[11px] font-mono">
-             <div className="bg-inst-surface px-3 py-1 rounded border border-inst-border">
-               <span className="text-inst-muted mr-2">TIMESTAMP:</span>
-               <span className="text-inst-text font-bold">{data.timestamp.replace('T', ' ')}</span>
+             <div className="bg-inst-surface px-3 py-1 rounded border border-inst-border flex items-center gap-2">
+               <span className="text-inst-muted">TIMESTAMP:</span>
+               <span className="text-inst-cyan font-bold">{data.timestamp.replace('T', ' ')}</span>
              </div>
              <div className="hidden sm:block opacity-60">
                <span className="text-inst-muted mr-2">EPOCH:</span>
@@ -73,9 +78,10 @@ const App: React.FC = () => {
              </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-mono text-inst-muted uppercase tracking-widest">System State:</span>
-            <span className="text-[10px] font-bold bg-inst-warning/5 text-inst-warning px-3 py-1 rounded border border-inst-warning/30 uppercase tracking-widest shadow-[0_0_10px_-3px_rgba(245,158,11,0.3)]">
-              Elevated Volatility
+            <span className="text-[10px] font-mono text-inst-muted uppercase tracking-widest">Exploitation Level:</span>
+            <span className="text-[10px] font-bold bg-inst-accent/10 text-inst-accent px-3 py-1 rounded border border-inst-accent/30 uppercase tracking-widest shadow-[0_0_10px_-3px_rgba(245,158,11,0.3)] flex items-center gap-2">
+               <span className="w-2 h-2 bg-inst-accent rounded-full animate-pulse"></span>
+               HIGH
             </span>
           </div>
         </div>
@@ -154,11 +160,11 @@ const App: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <span className="block text-[10px] text-inst-muted uppercase">Drift (μ)</span>
-                            <span className="font-mono text-sm text-inst-text">0.26 (Adoption)</span>
+                            <span className="font-mono text-sm text-inst-cyan">0.26 (Adoption)</span>
                         </div>
                         <div>
                             <span className="block text-[10px] text-inst-muted uppercase">Volatility (σ)</span>
-                            <span className="font-mono text-sm text-inst-text">0.65 (Regime)</span>
+                            <span className="font-mono text-sm text-inst-cyan">0.65 (Regime)</span>
                         </div>
                         <div>
                             <span className="block text-[10px] text-inst-muted uppercase">Scenario Date</span>

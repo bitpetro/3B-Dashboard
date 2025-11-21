@@ -23,17 +23,18 @@
               mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              // Institutional Palette
+              // Institutional Palette (Updated for 3B3 Spec)
               inst: {
-                bg: '#09090b',       // Zinc 950 - Deepest Background
-                surface: '#18181b',  // Zinc 900 - Card Background
-                border: '#27272a',   // Zinc 800 - Borders
-                text: '#f4f4f5',     // Zinc 100 - Primary Text (Brighter)
-                muted: '#d4d4d8',    // Zinc 300 - Secondary Text (High Contrast)
-                accent: '#f97316',   // Orange 500 - Strategic Highlight
-                success: '#10b981',  // Emerald 500
-                warning: '#f59e0b',  // Amber 500
-                danger: '#ef4444',   // Red 500
+                bg: '#000000',       // Obsidian Black
+                surface: '#111111',  // Deep Charcoal
+                border: '#333333',   // Steel
+                text: '#e4e4e7',     // Zinc 200
+                muted: '#a1a1aa',    // Zinc 400
+                accent: '#f59e0b',   // Aurum Orange (Amber 500)
+                cyan: '#06b6d4',     // Electric Cyan
+                success: '#10b981',  // Emerald
+                warning: '#f59e0b',  // Aurum
+                danger: '#dc2626',   // Blood Red
               }
             },
             typography: (theme) => ({
@@ -42,10 +43,10 @@
                   color: theme('colors.inst.text'),
                   h1: { color: theme('colors.inst.accent'), fontFamily: theme('fontFamily.mono') },
                   h2: { color: theme('colors.inst.text'), fontFamily: theme('fontFamily.mono'), borderBottom: `1px solid ${theme('colors.inst.border')}`, paddingBottom: '0.5rem' },
-                  h3: { color: theme('colors.inst.muted'), fontFamily: theme('fontFamily.mono'), textTransform: 'uppercase', letterSpacing: '0.1em' },
+                  h3: { color: theme('colors.inst.cyan'), fontFamily: theme('fontFamily.mono'), textTransform: 'uppercase', letterSpacing: '0.1em' },
                   strong: { color: theme('colors.inst.accent') },
                   th: { color: theme('colors.inst.muted'), fontFamily: theme('fontFamily.mono') },
-                  code: { color: theme('colors.inst.accent'), backgroundColor: 'rgba(249, 115, 22, 0.1)', padding: '0.2rem', borderRadius: '0.25rem' },
+                  code: { color: theme('colors.inst.cyan'), backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '0.2rem', borderRadius: '0.25rem' },
                 },
               },
             }),
@@ -63,27 +64,27 @@
       }
     </script>
     <style>
-      body { background-color: #09090b; color: #f4f4f5; -webkit-font-smoothing: antialiased; }
+      body { background-color: #000000; color: #e4e4e7; -webkit-font-smoothing: antialiased; }
       
       /* Clean, modernist scrollbar */
       ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: #18181b; }
-      ::-webkit-scrollbar-thumb { background: #3f3f46; }
-      ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+      ::-webkit-scrollbar-track { background: #111111; }
+      ::-webkit-scrollbar-thumb { background: #333333; }
+      ::-webkit-scrollbar-thumb:hover { background: #555555; }
       
       /* Map container fixes */
       .leaflet-container {
-        background: #09090b !important;
+        background: #000000 !important;
         font-family: 'JetBrains Mono', monospace;
       }
       .leaflet-popup-content-wrapper {
-        background: #18181b;
-        color: #f4f4f5;
-        border: 1px solid #27272a;
-        border-radius: 2px;
+        background: #111111;
+        color: #e4e4e7;
+        border: 1px solid #333333;
+        border-radius: 0px;
       }
       .leaflet-popup-tip {
-        background: #18181b;
+        background: #111111;
       }
     </style>
   <script type="importmap">
@@ -94,7 +95,7 @@
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "d3": "https://aistudiocdn.com/d3@^7.9.0",
-    "marked": "https://aistudiocdn.com/marked@15.0.6"
+    "marked": "https://esm.sh/marked@12.0.0"
   }
 }
 </script>
