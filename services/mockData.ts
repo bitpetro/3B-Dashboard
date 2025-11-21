@@ -1,31 +1,35 @@
+
 import { BodyType, FrameworkData, HazardLevel, Polarity } from '../types';
+
+export interface DataSource {
+  provider: string;
+  lastUpdate: string;
+  status: 'live' | 'delayed' | 'offline' | 'estimated';
+  gapIdentified: boolean;
+}
 
 export interface GeoPoint {
   id: string;
   name: string;
   lat: number;
   lng: number;
-  type: 'volcanic_hotspot' | 'magnetic_anomaly' | 'impact_crater';
+  type: 'mining_cluster' | 'strategic_reserve' | 'fiber_trunk' | 'data_center' | 'substation';
   intensity: number; // 0-100
   hazard: HazardLevel;
   description: string;
+  source: DataSource;
 }
 
 export interface WeatherSystem {
   id: string;
   name: string;
-  type: 'solar_wind' | 'aurora' | 'cyclone' | 'tectonic_plate' | 'magma_plume';
-  coordinates: [number, number]; // [lng, lat]
-  radius: number;
+  type: 'high_pressure' | 'low_pressure' | 'storm_front' | 'jet_stream';
+  coordinates: [number, number]; // [lat, lng] center
+  radius: number; // meters
+  intensity: number; // 0-100
   hazard: HazardLevel;
   description: string;
-}
-
-export interface FeedbackEdge {
-  source: string; 
-  target: string; 
-  weight: number; 
-  type: 'amplification' | 'dampening';
+  velocity: number; // movement speed
 }
 
 export interface SimulationPoint {
@@ -35,52 +39,95 @@ export interface SimulationPoint {
   p90: number; 
 }
 
+export interface IsoZone {
+    id: string;
+    name: string;
+    code: string;
+    coordinates: [number, number][];
+    price: number; // $/MWh
+    trend: 'rising' | 'falling' | 'stable';
+    congestionLevel: 'low' | 'medium' | 'high'; // Visual heat
+    source: DataSource;
+}
+
+export interface PipelineSegment {
+    id: string;
+    name: string;
+    path: [number, number][]; // Array of [lat, lng]
+    pricingStatus: 'negative' | 'neutral' | 'premium'; // Color coding basis
+    hubPrice: number; // $/MMBtu
+    throughput: number; // Bcf/d
+    source: DataSource;
+}
+
+export interface PowerStation {
+    id: string;
+    name: string;
+    type: 'nuclear' | 'solar' | 'wind' | 'hydro' | 'gas' | 'coal';
+    capacity: number; // MW
+    lat: number;
+    lng: number;
+    source: DataSource;
+}
+
 export interface EnhancedFrameworkData extends FrameworkData {
   geoLocations: GeoPoint[];
   weatherSystems: WeatherSystem[];
-  feedbackEdges: FeedbackEdge[];
   simulation: SimulationPoint[];
+  isoZones: IsoZone[];
+  pipelines: PipelineSegment[];
+  powerStations: PowerStation[];
 }
 
-function generateNormal(mean: number, stdDev: number): number {
-  const u = 1 - Math.random(); 
-  const v = Math.random();
-  const z = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
-  return z * stdDev + mean;
-}
-
-function runMonteCarloSimulation(): SimulationPoint[] {
-  const simulations = 2000; 
-  const years = 5;
+// Advanced Geometric Brownian Motion for Price Simulation
+function runStochasticSimulation(): SimulationPoint[] {
+  const simulations = 500; 
+  const years = 10; // 2025 to 2035
   const startYear = 2025;
-  const currentPrice = 98000;
-  const trajectories: number[][] = [];
+  const startPrice = 98500; // Scenario Baseline: Late 2025 Bull
+  
+  const dt = 1/12; 
+  const steps = years * 12;
+  
+  const mu = 0.26; 
+  const sigma = 0.65; 
+  
+  const yearlyPrices: number[][] = Array.from({ length: years + 1 }, () => []);
 
   for(let i=0; i<simulations; i++) {
-    let price = currentPrice;
-    const path: number[] = [];
-    for(let y=0; y<years; y++) {
-       // "Extinction Level Event" impactor risk (Tail risk)
-       const impactorEvent = Math.random() > 0.97 ? -0.6 : 0.0; // 3% chance of 60% drop (Meteor)
-       const solarInjection = Math.random() > 0.8 ? 0.4 : 0.0;   // 20% chance of massive liquidity (CME)
-       
-       const drift = 0.12 + impactorEvent + solarInjection; 
-       const shock = generateNormal(0, 0.5); // High volatility environment
-       
-       price *= (1 + drift + shock);
-       path.push(price);
+    let price = startPrice;
+    yearlyPrices[0].push(price);
+
+    for(let t=1; t<=steps; t++) {
+      const isHalving = (Math.abs(t - 3 * 12) < 2) || (Math.abs(t - 7 * 12) < 2);
+      const jump = isHalving ? (0.15 + Math.random() * 0.2) : 0; 
+
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+      
+      const drift = (mu - 0.5 * sigma * sigma) * dt;
+      const diffusion = sigma * Math.sqrt(dt) * z;
+      
+      price = price * Math.exp(drift + diffusion + jump);
+      
+      if (t % 12 === 0) {
+         const yearIndex = t / 12;
+         if (yearIndex <= years) {
+            yearlyPrices[yearIndex].push(price);
+         }
+      }
     }
-    trajectories.push(path);
   }
   
   const results: SimulationPoint[] = [];
-  for(let y=0; y<years; y++) {
-     const yearPrices = trajectories.map(t => t[y]).sort((a,b) => a-b);
+  for(let y=0; y<=years; y++) {
+     const prices = yearlyPrices[y].sort((a,b) => a-b);
      results.push({
-       year: startYear + y + 1,
-       p10: yearPrices[Math.floor(simulations * 0.1)],
-       p50: yearPrices[Math.floor(simulations * 0.5)],
-       p90: yearPrices[Math.floor(simulations * 0.9)]
+       year: startYear + y,
+       p10: prices[Math.floor(simulations * 0.10)] || 0,
+       p50: prices[Math.floor(simulations * 0.50)] || 0,
+       p90: prices[Math.floor(simulations * 0.90)] || 0
      });
   }
   return results;
@@ -88,192 +135,327 @@ function runMonteCarloSimulation(): SimulationPoint[] {
 
 export const getInitialData = (): EnhancedFrameworkData => {
   return {
-    timestamp: "Nov 18, 2025 [Post-Tariff Epoch]", 
+    timestamp: "2025-11-20T14:30:00Z", 
     bodies: {
       [BodyType.Protocol]: [
         {
-          id: "security_sensor",
-          name: "1. Security Sensor",
-          scientificName: "Core Geothermal Monitor",
+          id: "hash_var",
+          name: "1.0 // Hash Rate",
+          scientificName: "Kinetic Security",
           body: BodyType.Protocol,
           hazardLevel: HazardLevel.Nominal,
           polarity: 'positive',
-          condition: "Magmatic Uplift (Heat Wave)",
-          summary: "Hash rate acting as planetary core heat. Temperatures rising, indicating strong crustal defense against external attack vectors.",
+          condition: "V2 Transition",
+          summary: "Hash Rate Volatility Index (HRVX) indicates healthy miner capitulation processing.",
           metrics: [
-            { id: "hash_rate", name: "Global Hash Rate", value: "780", unit: "EH/s", description: "Network Security Budget", hazardLevel: HazardLevel.Nominal, trend: 'intensifying' },
-            { id: "difficulty", name: "Crust Density", value: "105", unit: "T", description: "Mining Difficulty", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', isSecondary: true },
-            { id: "energy_mix", name: "Thermal Efficiency", value: "62", unit: "%", description: "Sustainable Power Mix", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true }
-          ]
+            { id: "stratum_v2", name: "Stratum V2 Adoption", value: "5.2", unit: "%", description: "Censorship Resistance", hazardLevel: HazardLevel.Elevated, trend: 'intensifying', sources: ["Braiins"] },
+            { id: "hrvx", name: "HRVX (30d)", value: "4.07", unit: "%", description: "Miner Stress Index", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true, sources: ["Luxor"] }
+          ],
+          conceptual: {
+            trivium: "Grammar",
+            triviumRole: "Structure & Vocabulary",
+            forceDescription: "Force 1: What",
+            earthSystemAnalogy: "Tectonic Activity",
+            analogyDescription: "Like tectonic plates creating mountains through immense pressure, Hash Rate provides the massive, energy-intensive kinetic structure that underpins the entire digital continent."
+          }
         },
         {
-          id: "sovereignty_sensor",
-          name: "2. Sovereignty Sensor",
-          scientificName: "Planetary Magnetosphere",
-          body: BodyType.Protocol,
-          hazardLevel: HazardLevel.Elevated,
-          polarity: 'negative',
-          condition: "Field Weakening / Pole Shift",
-          summary: "Solar wind (institutional capital) penetrating the magnetosphere. Aurora Borealis visible at lower latitudes (Retail ETFs).",
-          metrics: [
-            { id: "etf_aum", name: "ETF Holdings", value: "1.25", unit: "M BTC", description: "Custodial Concentration", hazardLevel: HazardLevel.Critical, trend: 'intensifying' },
-            { id: "node_count", name: "Field Generators", value: "17,420", unit: "Nodes", description: "Reachable Nodes", hazardLevel: HazardLevel.Elevated, trend: 'dissipating', isSecondary: true },
-            { id: "self_custody", name: "Shield Integrity", value: "68", unit: "%", description: "Supply in Self-Custody", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true }
-          ]
-        },
-        {
-          id: "scalability_sensor",
-          name: "3. Scalability Sensor",
-          scientificName: "Lithospheric Tectonics",
+          id: "gov_var",
+          name: "2.0 // Governance",
+          scientificName: "Consensus Mechanics",
           body: BodyType.Protocol,
           hazardLevel: HazardLevel.Nominal,
           polarity: 'neutral',
-          condition: "Subduction Stable",
-          summary: "Tectonic plates (L1/L2) moving smoothly. No major seismic events (congestive earthquakes) detected in the mempool fault lines.",
+          condition: "Ossification",
+          summary: "High Ossification Score confirms protocol resistance to political capture.",
           metrics: [
-            { id: "l2_tvl", name: "L2 Value Mass", value: "4.8", unit: "$B", description: "Total Value Locked", hazardLevel: HazardLevel.Nominal, trend: 'intensifying' },
-            { id: "fees", name: "Friction coeff.", value: "4", unit: "sat/vB", description: "Avg Transaction Fee", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true },
-            { id: "lightning", name: "Channel Capacity", value: "5,600", unit: "BTC", description: "Off-chain Liquidity", hazardLevel: HazardLevel.Elevated, trend: 'dissipating', isSecondary: true }
-          ]
+            { id: "bip_adopt", name: "BIP Adoption Rate", value: "82", unit: "%", description: "Node Signaling", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', sources: ["Bitcoin Core"] },
+            { id: "ossification", name: "Ossification Score", value: "0.65", unit: "/1.0", description: "Change Resistance", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true, sources: ["GitHub"] }
+          ],
+          conceptual: {
+            trivium: "Logic",
+            triviumRole: "Reason & Rules",
+            forceDescription: "Force 2: How",
+            earthSystemAnalogy: "The Rock Cycle",
+            analogyDescription: "Governance acts as the Rock Cycle, a slow process where material is recycled and layered over geological time, ensuring structural integrity without rapid, destabilizing metamorphosis."
+          }
+        },
+        {
+          id: "layer_var",
+          name: "3.0 // Layers",
+          scientificName: "Throughput Physics",
+          body: BodyType.Protocol,
+          hazardLevel: HazardLevel.Nominal,
+          polarity: 'positive',
+          condition: "L2 Expansion",
+          summary: "Scalability Balance Ratio favoring L2 settlement efficiency.",
+          metrics: [
+            { id: "scale_ratio", name: "Scalability Ratio", value: "0.95", unit: "L2/L1", description: "Settlement Efficiency", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', sources: ["Glassnode"] },
+            { id: "ln_growth", name: "LN Node Growth", value: "7.1", unit: "%", description: "Network Topology", hazardLevel: HazardLevel.Elevated, trend: 'dissipating', isSecondary: true, sources: ["1ML"] }
+          ],
+          conceptual: {
+            trivium: "Rhetoric",
+            triviumRole: "Application & Persuasion",
+            forceDescription: "Force 3: Why",
+            earthSystemAnalogy: "Continental Drift",
+            analogyDescription: "Layers represent Continental Drift—the slow expansion and restructuring of the crust that creates new habitats (blockspace) and connects disparate landmasses (payment corridors)."
+          }
         }
       ],
       [BodyType.Price]: [
         {
-          id: "digital_sensor",
-          name: "4. Digital Sensor",
-          scientificName: "Oceanic Oscillation (Spot)",
+          id: "spot_var",
+          name: "4.0 // Spot Market",
+          scientificName: "Valuation Physics",
+          body: BodyType.Price,
+          hazardLevel: HazardLevel.Critical, 
+          polarity: 'positive',
+          condition: "Super-Cycle Impulse",
+          summary: "MVRV Ratio > 2.0 indicates heated valuation relative to realized cost basis.",
+          metrics: [
+            { id: "mvrv", name: "MVRV Ratio", value: "2.13", unit: "x", description: "Market/Realized Cap", hazardLevel: HazardLevel.Critical, trend: 'intensifying', sources: ["Glassnode"] },
+            { id: "hodl_waves", name: "HODL Waves (>1yr)", value: "68", unit: "%", description: "Long-term Conviction", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true, sources: ["Glassnode"] }
+          ],
+          conceptual: {
+            trivium: "Grammar",
+            triviumRole: "Structure & Vocabulary",
+            forceDescription: "Force 1: What",
+            earthSystemAnalogy: "Evaporation & Condensation",
+            analogyDescription: "The Spot Market is the water cycle of the economy. Capital evaporates (selling) and condenses (buying), transferring energy into the atmosphere and driving the basic weather system."
+          }
+        },
+        {
+          id: "deriv_var",
+          name: "5.0 // Derivatives",
+          scientificName: "Speculative Velocity",
           body: BodyType.Price,
           hazardLevel: HazardLevel.Elevated,
-          polarity: 'positive',
-          condition: "El Niño Warming Phase",
-          summary: "Surface temperatures rising. Deep currents (Long-term holders) providing buoyancy against atmospheric pressure.",
+          polarity: 'negative',
+          condition: "Leverage Flush",
+          summary: "Open Interest Cascade Risk elevated; potential for liquidation wicks.",
           metrics: [
-            { id: "price", name: "Surface Level", value: "98,250", unit: "USD", description: "BTC/USD Exchange Rate", hazardLevel: HazardLevel.Elevated, trend: 'intensifying' },
-            { id: "mvrv", name: "Thermal Anomaly", value: "2.4", unit: "Z", description: "MVRV Z-Score", hazardLevel: HazardLevel.Elevated, trend: 'intensifying', isSecondary: true },
-            { id: "realized", name: "Base Level", value: "34,100", unit: "USD", description: "Realized Price", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', isSecondary: true }
-          ]
+            { id: "cascade_risk", name: "Cascade Risk", value: "18.5", unit: "High", description: "OI / Volume Ratio", hazardLevel: HazardLevel.Critical, trend: 'intensifying', sources: ["CoinGlass"] },
+            { id: "funding", name: "Funding Rate", value: "0.01", unit: "%", description: "Perpetual Premium", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true, sources: ["CoinGlass"] }
+          ],
+          conceptual: {
+            trivium: "Logic",
+            triviumRole: "Reason & Rules",
+            forceDescription: "Force 2: How",
+            earthSystemAnalogy: "Jet Streams & El Niño",
+            analogyDescription: "Derivatives act as high-altitude Jet Streams—fast-moving, invisible currents of leverage that can drastically alter surface weather patterns, creating storms or rapidly clearing skies."
+          }
         },
         {
-          id: "spectral_sensor",
-          name: "5. Spectral Sensor",
-          scientificName: "Atmospheric Cyclonics (Derivs)",
+          id: "macro_var",
+          name: "6.0 // Macro Environment",
+          scientificName: "Global Liquidity",
           body: BodyType.Price,
           hazardLevel: HazardLevel.Critical,
           polarity: 'negative',
-          condition: "Derecho / Flash Crash Warning",
-          summary: "Supercell forming in the upper atmosphere. High wind shear (Leverage) creating conditions for a rapid downdraft event.",
+          condition: "Monetary Contraction",
+          summary: "Fed Net Liquidity contraction exerting downward pressure on risk assets.",
           metrics: [
-            { id: "open_interest", name: "Storm Energy", value: "42.5", unit: "$B", description: "Open Interest", hazardLevel: HazardLevel.Critical, trend: 'intensifying' },
-            { id: "funding", name: "Pressure Diff", value: "0.04", unit: "%", description: "Funding Rate (8h)", hazardLevel: HazardLevel.Elevated, trend: 'intensifying', isSecondary: true },
-            { id: "iv", name: "Turbulence", value: "65", unit: "%", description: "Implied Volatility", hazardLevel: HazardLevel.Elevated, trend: 'stable', isSecondary: true }
-          ]
-        },
-        {
-          id: "liquidity_sensor",
-          name: "6. Liquidity Sensor",
-          scientificName: "Heliophysics (Macro)",
-          body: BodyType.Price,
-          hazardLevel: HazardLevel.Critical,
-          polarity: 'negative',
-          condition: "Solar Minimum / CME Risk",
-          summary: "The Central Bank Star is dimming (QT). Solar wind velocity (M2) is low, reducing the protective plasma sheath around assets.",
-          metrics: [
-            { id: "global_m2", name: "Solar Wind", value: "98.2", unit: "$T", description: "Global M2 Supply", hazardLevel: HazardLevel.Critical, trend: 'dissipating' },
-            { id: "dxy", name: "Gravity Well", value: "104.5", unit: "idx", description: "USD Strength Index", hazardLevel: HazardLevel.Elevated, trend: 'intensifying', isSecondary: true },
-            { id: "yield_10y", name: "Radiation", value: "4.5", unit: "%", description: "US 10Y Yield", hazardLevel: HazardLevel.Critical, trend: 'intensifying', isSecondary: true }
-          ]
+            { id: "net_liq", name: "Fed Net Liquidity", value: "6.2", unit: "$T", description: "Assets - (RRP+TGA)", hazardLevel: HazardLevel.Critical, trend: 'dissipating', sources: ["FRED"] },
+            { id: "m2_impact", name: "M2 Growth Impact", value: "6.7", unit: "%", description: "YoY Supply Change", hazardLevel: HazardLevel.Elevated, trend: 'intensifying', isSecondary: true, sources: ["FRED"] }
+          ],
+          conceptual: {
+            trivium: "Rhetoric",
+            triviumRole: "Application & Persuasion",
+            forceDescription: "Force 3: Why",
+            earthSystemAnalogy: "Atmospheric Circulation",
+            analogyDescription: "Macro Liquidity is the Global Atmospheric Circulation—the planetary flow of air/capital that determines the overall climate zones and seasons, affecting all local weather systems."
+          }
         }
       ],
       [BodyType.Environment]: [
         {
-          id: "physical_sensor",
-          name: "7. Physical Sensor",
-          scientificName: "Biosphere / Energy Grid",
-          body: BodyType.Environment,
-          hazardLevel: HazardLevel.Nominal,
-          polarity: 'positive',
-          condition: "Stable Symbiosis",
-          summary: "Mining fleet acting as a load-balancer for the energy grid. Algal blooms of renewable capacity co-locating with data centers.",
-          metrics: [
-            { id: "power_draw", name: "Metabolic Rate", value: "18.5", unit: "GW", description: "Network Power Draw", hazardLevel: HazardLevel.Nominal, trend: 'intensifying' },
-            { id: "sustainable", name: "Photosynthesis", value: "59", unit: "%", description: "Sustainable Energy Mix", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', isSecondary: true },
-            { id: "heat_reuse", name: "Symbiosis", value: "3", unit: "GW", description: "Heat Recycling Capacity", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', isSecondary: true }
-          ]
-        },
-        {
-          id: "law_sensor",
-          name: "8. Law Sensor",
-          scientificName: "Anthropogenic Forcing",
+          id: "energy_var",
+          name: "7.0 // Energy",
+          scientificName: "Thermodynamics",
           body: BodyType.Environment,
           hazardLevel: HazardLevel.Critical,
           polarity: 'negative',
-          condition: "Acid Rain / Smog",
-          summary: "Industrial pollutants (Regulations) causing localized toxicity. Sanctions creating dead zones where capital cannot flow.",
+          condition: "Resource Competition",
+          summary: "AI Squeeze Metric > 1.0 implies data centers displacing hashrate.",
           metrics: [
-            { id: "sanctions", name: "Toxicity Level", value: "High", unit: "Risk", description: "Regulatory Hostility", hazardLevel: HazardLevel.Critical, trend: 'intensifying' },
-            { id: "ofac", name: "Filtered Flow", value: "0.01", unit: "%", description: "OFAC Compliant Blocks", hazardLevel: HazardLevel.Nominal, trend: 'stable', isSecondary: true }
-          ]
+            { id: "ai_squeeze", name: "AI Squeeze Metric", value: "1.42", unit: "Ratio", description: "DC vs Mining Demand", hazardLevel: HazardLevel.Critical, trend: 'intensifying', sources: ["Digiconomist"] },
+            { id: "efficiency", name: "Efficiency", value: "24", unit: "J/TH", description: "Network Efficiency", hazardLevel: HazardLevel.Nominal, trend: 'dissipating', isSecondary: true, sources: ["Hashrate Index"] }
+          ],
+          conceptual: {
+            trivium: "Grammar",
+            triviumRole: "Structure & Vocabulary",
+            forceDescription: "Force 1: What",
+            earthSystemAnalogy: "Photosynthesis",
+            analogyDescription: "Energy mining is the Photosynthesis of the digital organism—converting raw energy (photons/electrons) into metabolic growth (hash) to sustain the biosphere."
+          }
         },
         {
-          id: "social_sensor",
-          name: "9. Social Sensor",
-          scientificName: "Terrestrial Topography",
+          id: "reg_var",
+          name: "8.0 // Regulatory",
+          scientificName: "Political Friction",
+          body: BodyType.Environment,
+          hazardLevel: HazardLevel.Elevated,
+          polarity: 'negative',
+          condition: "Jurisdictional Arbitrage",
+          summary: "Censorship Index remains low, but Sovereignty Ratio needs improvement.",
+          metrics: [
+            { id: "censorship", name: "Censorship Index", value: "2.4", unit: "%", description: "OFAC Compliant Blocks", hazardLevel: HazardLevel.Nominal, trend: 'stable', sources: ["MEV Watch"] },
+            { id: "sovereignty", name: "Sovereignty Ratio", value: "65", unit: "%", description: "Self-Custody Supply", hazardLevel: HazardLevel.Elevated, trend: 'dissipating', isSecondary: true, sources: ["Glassnode"] }
+          ],
+          conceptual: {
+            trivium: "Logic",
+            triviumRole: "Reason & Rules",
+            forceDescription: "Force 2: How",
+            earthSystemAnalogy: "Natural Selection",
+            analogyDescription: "Regulation functions as Natural Selection—environmental pressures and rules that dictate which organisms (companies/protocols) survive, adapt, or go extinct."
+          }
+        },
+        {
+          id: "social_var",
+          name: "9.0 // Social & Land",
+          scientificName: "Adoption Topology",
           body: BodyType.Environment,
           hazardLevel: HazardLevel.Elevated,
           polarity: 'neutral',
-          condition: "Erosion & Migration",
-          summary: "Wealth concentration causing topsoil erosion in developed markets. Mass migration of users to L2 alluvial plains.",
+          condition: "Wealth Concentration",
+          summary: "Land Scarcity Heatmap indicates prime grid interconnects are saturated.",
           metrics: [
-            { id: "active_addrs", name: "Population", value: "1.2", unit: "M", description: "Daily Active Addresses", hazardLevel: HazardLevel.Elevated, trend: 'dissipating' },
-            { id: "gini", name: "Elevation Diff", value: "0.82", unit: "idx", description: "Wealth Gini Coeff", hazardLevel: HazardLevel.Critical, trend: 'stable', isSecondary: true },
-            { id: "hodl", name: "Sedimentation", value: "70", unit: "%", description: "Supply Unmoved >1yr", hazardLevel: HazardLevel.Nominal, trend: 'intensifying', isSecondary: true }
-          ]
+            { id: "scarcity", name: "Scarcity Index", value: "88", unit: "/100", description: "Land/Power Availability", hazardLevel: HazardLevel.Critical, trend: 'intensifying', sources: ["USGS", "HIFLD"] },
+            { id: "gini", name: "Gini Coefficient", value: "0.45", unit: "Idx", description: "Wealth Inequality", hazardLevel: HazardLevel.Elevated, trend: 'stable', isSecondary: true, sources: ["Glassnode"] }
+          ],
+          conceptual: {
+            trivium: "Rhetoric",
+            triviumRole: "Application & Persuasion",
+            forceDescription: "Force 3: Why",
+            earthSystemAnalogy: "Biodiversity & Habitat",
+            analogyDescription: "Social & Land variables represent Biodiversity and Habitat—the struggle against fragmentation (inequality) and the challenge of ensuring all participants have access to the ecosystem."
+          }
         }
       ]
     },
-    geoLocations: [],
+    geoLocations: [
+        {
+            id: "sub_1",
+            name: "Permian Substation Alpha",
+            lat: 31.5, 
+            lng: -102.5,
+            type: "substation",
+            intensity: 100,
+            hazard: HazardLevel.Nominal,
+            description: "200MW Capacity Available / Rural",
+            source: { provider: "HIFLD", lastUpdate: "2025", status: "live", gapIdentified: false }
+        },
+        {
+            id: "riot_rockdale",
+            name: "Rockdale Mining Cluster",
+            lat: 30.57, 
+            lng: -97.00,
+            type: "mining_cluster",
+            intensity: 95,
+            hazard: HazardLevel.Nominal,
+            description: "700MW Operational / Immersion",
+            source: { provider: "EIA-860", lastUpdate: "2024", status: "live", gapIdentified: false }
+        },
+        {
+            id: "corsicana_riot",
+            name: "Corsicana Expansion",
+            lat: 32.09,
+            lng: -96.46,
+            type: "mining_cluster",
+            intensity: 90,
+            hazard: HazardLevel.Elevated,
+            description: "1GW Planned / Grid Study Pending",
+            source: { provider: "Public Filings", lastUpdate: "2025", status: "live", gapIdentified: false }
+        },
+        {
+            id: "ashburn_dc",
+            name: "Ashburn Data Center Alley",
+            lat: 39.04,
+            lng: -77.48,
+            type: "data_center",
+            intensity: 100,
+            hazard: HazardLevel.Critical,
+            description: "Hyperscaler Saturation / No Power",
+            source: { provider: "Dgtl Infra", lastUpdate: "2025", status: "estimated", gapIdentified: true }
+        },
+        {
+            id: "dfw_dc",
+            name: "Dallas Digital Realty",
+            lat: 32.94,
+            lng: -96.82,
+            type: "data_center",
+            intensity: 85,
+            hazard: HazardLevel.Elevated,
+            description: "High Competition Zone",
+            source: { provider: "Mapbox", lastUpdate: "2025", status: "live", gapIdentified: false }
+        }
+    ],
     weatherSystems: [
       { 
-        id: "solar_min", 
-        name: "Liquidity Drought", 
-        type: "solar_wind", 
-        coordinates: [-77.0, 38.9], 
-        radius: 45, 
+        id: "ws_1", 
+        name: "Systemic Liquidity Void", 
+        type: "low_pressure", 
+        coordinates: [40.71, -74.00], // NYC
+        radius: 900000, 
+        intensity: 85,
         hazard: HazardLevel.Critical, 
-        description: "Fed QT: Solar Minimum" 
-      },
-      { 
-        id: "etf_aurora", 
-        name: "ETF Aurora", 
-        type: "aurora", 
-        coordinates: [-74.0, 40.7], 
-        radius: 35, 
-        hazard: HazardLevel.Elevated, 
-        description: "Wall St. Magnetic Reconnection" 
-      },
-      { 
-        id: "mining_plume", 
-        name: "Texan Hash Plume", 
-        type: "magma_plume", 
-        coordinates: [-100.0, 31.0], 
-        radius: 28, 
-        hazard: HazardLevel.Nominal, 
-        description: "Geothermal Venting (780 EH/s)" 
-      },
-      { 
-        id: "derivs_derecho", 
-        name: "Derivatives Derecho", 
-        type: "cyclone", 
-        coordinates: [114.1, 22.3], 
-        radius: 20, 
-        hazard: HazardLevel.Critical, 
-        description: "Leverage Storm ($42B OI)" 
+        description: "TradFi Credit Contraction",
+        velocity: 0.1
       }
     ],
-    feedbackEdges: [
-      { source: "mining_plume", target: "derivs_derecho", weight: 0.7, type: "amplification" },
-      { source: "solar_min", target: "etf_aurora", weight: 0.9, type: "dampening" },
+    isoZones: [
+        {
+            id: "iso_ercot",
+            name: "ERCOT (Texas)",
+            code: "ERCOT",
+            // Simplified polygon roughly covering Texas - Expanded slightly for visibility
+            coordinates: [[36.5,-103], [36.5,-100], [34.5, -94.5], [33.5,-94], [29.5,-93.5], [26,-97], [25.8,-97.5], [29,-103.5], [31.8,-106.5], [32,-106.5]],
+            price: 38.20,
+            trend: 'stable',
+            congestionLevel: 'low',
+            source: { provider: "ERCOT API", lastUpdate: "Live", status: "live", gapIdentified: false }
+        }
     ],
-    simulation: runMonteCarloSimulation()
+    pipelines: [
+        // Permian Header (West Texas -> Katy Hub)
+        {
+            id: "pipe_permian",
+            name: "Permian Express",
+            // Expanded path for better map visibility
+            path: [
+                [31.5, -103.5], 
+                [31.4, -102.8],
+                [31.2, -102.0], 
+                [31.0, -100.5], 
+                [30.5, -98.0], 
+                [29.8, -95.8]
+            ],
+            pricingStatus: 'negative',
+            hubPrice: -1.50,
+            throughput: 2.0,
+            source: { provider: "EIA", lastUpdate: "Live", status: "live", gapIdentified: false }
+        },
+        // Waha Header
+        {
+            id: "pipe_waha",
+            name: "Waha Header",
+            path: [
+                [31.9, -103.8], 
+                [31.7, -103.5],
+                [31.5, -103.2], 
+                [31.4, -102.5]
+            ],
+            pricingStatus: 'negative',
+            hubPrice: -2.10,
+            throughput: 1.5,
+            source: { provider: "EIA", lastUpdate: "Live", status: "live", gapIdentified: false }
+        }
+    ],
+    powerStations: [
+        { id: "pwr_1", name: "Palo Verde", type: "nuclear", capacity: 3937, lat: 33.39, lng: -112.86, source: { provider: "EIA", lastUpdate: "2025", status: "live", gapIdentified: false }},
+        { id: "pwr_2", name: "Comanche Peak", type: "nuclear", capacity: 2300, lat: 32.29, lng: -97.78, source: { provider: "EIA", lastUpdate: "2025", status: "live", gapIdentified: false }},
+        { id: "pwr_3", name: "South Texas Project", type: "nuclear", capacity: 2700, lat: 28.79, lng: -96.05, source: { provider: "EIA", lastUpdate: "2025", status: "live", gapIdentified: false }}
+    ],
+    simulation: runStochasticSimulation()
   };
 };

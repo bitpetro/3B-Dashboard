@@ -1,3 +1,4 @@
+
 export enum BodyType {
   Protocol = "Protocol Body (Geosphere)",
   Price = "Price Body (Heliosphere)",
@@ -14,6 +15,16 @@ export enum HazardLevel {
 
 export type Polarity = 'positive' | 'negative' | 'neutral';
 
+export type TriviumType = 'Grammar' | 'Logic' | 'Rhetoric';
+
+export interface ConceptualMapping {
+    trivium: TriviumType;
+    triviumRole: string; // e.g., "The Foundational Structure"
+    forceDescription: string; // e.g., "Raw, Foundational Processes"
+    earthSystemAnalogy: string; // e.g., "Tectonic Activity"
+    analogyDescription: string; // Detailed analogy description
+}
+
 export interface Metric {
   id: string;
   name: string;
@@ -23,6 +34,7 @@ export interface Metric {
   hazardLevel: HazardLevel;
   trend: 'intensifying' | 'dissipating' | 'stable';
   isSecondary?: boolean;
+  sources?: string[]; // Added for multi-source validation
 }
 
 export interface Variable {
@@ -35,6 +47,7 @@ export interface Variable {
   hazardLevel: HazardLevel;
   polarity: Polarity; // For magnetic circuit modeling
   summary: string;
+  conceptual: ConceptualMapping; // New 3B3 Framework Integration
 }
 
 export interface FrameworkData {

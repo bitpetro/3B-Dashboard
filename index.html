@@ -3,9 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Rebellion's Ledger | 3B³ Dashboard</title>
+    <title>3B³ Framework | Strategic Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Global Scripts for Leaflet Stability -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js" integrity="sha512-G4+fuVg1vr0ByWjT0s+yXU/Z5E/Z0SGF9Z1oQ1WzXynA8hV86n8v5l6V7x6bV6l7X6e9V6l7X6e9V6l7X6e9V6==" crossorigin=""></script>
+    <!-- Geospatial Analysis -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    
     <script>
       tailwind.config = {
         theme: {
@@ -15,23 +23,68 @@
               mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              bitcoin: {
-                orange: '#F7931A',
-                dark: '#1a1a1a',
-                panel: '#2d2d2d',
+              // Institutional Palette
+              inst: {
+                bg: '#09090b',       // Zinc 950 - Deepest Background
+                surface: '#18181b',  // Zinc 900 - Card Background
+                border: '#27272a',   // Zinc 800 - Borders
+                text: '#f4f4f5',     // Zinc 100 - Primary Text (Brighter)
+                muted: '#d4d4d8',    // Zinc 300 - Secondary Text (High Contrast)
+                accent: '#f97316',   // Orange 500 - Strategic Highlight
+                success: '#10b981',  // Emerald 500
+                warning: '#f59e0b',  // Amber 500
+                danger: '#ef4444',   // Red 500
               }
-            }
+            },
+            typography: (theme) => ({
+              DEFAULT: {
+                css: {
+                  color: theme('colors.inst.text'),
+                  h1: { color: theme('colors.inst.accent'), fontFamily: theme('fontFamily.mono') },
+                  h2: { color: theme('colors.inst.text'), fontFamily: theme('fontFamily.mono'), borderBottom: `1px solid ${theme('colors.inst.border')}`, paddingBottom: '0.5rem' },
+                  h3: { color: theme('colors.inst.muted'), fontFamily: theme('fontFamily.mono'), textTransform: 'uppercase', letterSpacing: '0.1em' },
+                  strong: { color: theme('colors.inst.accent') },
+                  th: { color: theme('colors.inst.muted'), fontFamily: theme('fontFamily.mono') },
+                  code: { color: theme('colors.inst.accent'), backgroundColor: 'rgba(249, 115, 22, 0.1)', padding: '0.2rem', borderRadius: '0.25rem' },
+                },
+              },
+            }),
           }
-        }
+        },
+        plugins: [
+          function({ addBase, theme }) {
+            addBase({
+              'h1': { fontSize: theme('fontSize.2xl') },
+              'h2': { fontSize: theme('fontSize.xl') },
+              'h3': { fontSize: theme('fontSize.lg') },
+            })
+          }
+        ]
       }
     </script>
     <style>
-      body { background-color: #0f1115; color: #e2e8f0; }
-      /* Custom scrollbar for dashboard feel */
-      ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-track { background: #1e293b; }
-      ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+      body { background-color: #09090b; color: #f4f4f5; -webkit-font-smoothing: antialiased; }
+      
+      /* Clean, modernist scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #18181b; }
+      ::-webkit-scrollbar-thumb { background: #3f3f46; }
+      ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+      
+      /* Map container fixes */
+      .leaflet-container {
+        background: #09090b !important;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .leaflet-popup-content-wrapper {
+        background: #18181b;
+        color: #f4f4f5;
+        border: 1px solid #27272a;
+        border-radius: 2px;
+      }
+      .leaflet-popup-tip {
+        background: #18181b;
+      }
     </style>
   <script type="importmap">
 {
@@ -40,7 +93,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "d3": "https://aistudiocdn.com/d3@^7.9.0"
+    "d3": "https://aistudiocdn.com/d3@^7.9.0",
+    "marked": "https://aistudiocdn.com/marked@15.0.6"
   }
 }
 </script>

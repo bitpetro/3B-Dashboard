@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BodyType } from './types';
 import { getInitialData } from './services/mockData';
@@ -5,110 +6,173 @@ import { VariableCard } from './components/VariableCard';
 import { GeospatialMap } from './components/GeospatialMap';
 import { MonteCarloChart } from './components/MonteCarloChart';
 import { GeminiAnalysis } from './components/GeminiAnalysis';
+import { generateStrategicDispatch, GeminiResponse } from './services/geminiService';
 
 const App: React.FC = () => {
   const [data] = useState(getInitialData());
   const [view, setView] = useState<'dashboard' | 'map'>('dashboard');
+  
+  // Lifted State for Report Persistence
+  const [analysis, setAnalysis] = useState<GeminiResponse | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    const result = await generateStrategicDispatch(data);
+    setAnalysis(result);
+    setIsAnalyzing(false);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans selection:bg-orange-500 selection:text-white pb-12">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-700 rounded transform rotate-45 shadow-lg shadow-orange-900/20"></div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-100">THE REBELLION'S LEDGER</h1>
-              <p className="text-[10px] font-mono text-orange-500 tracking-widest uppercase">3B³ Operational Dashboard</p>
+    <div className="min-h-screen bg-inst-bg text-inst-text font-sans pb-20 selection:bg-inst-accent/30">
+      {/* Institutional Header */}
+      <header className="border-b border-inst-border bg-inst-surface sticky top-0 z-30 shadow-lg shadow-black/20">
+        <div className="max-w-[1800px] mx-auto px-4 lg:px-6 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold tracking-tighter text-inst-text leading-none">3B³ FRAMEWORK</h1>
+              <span className="text-[10px] font-mono text-inst-muted tracking-[0.25em] uppercase mt-1.5">Version 1.0 (Nov 20, 2025)</span>
+            </div>
+            <div className="h-8 w-px bg-inst-border mx-2 hidden md:block"></div>
+            <div className="text-[10px] font-mono text-inst-accent px-2 py-1 border border-inst-accent/20 rounded bg-inst-accent/5 hidden md:flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-inst-accent animate-pulse"></span>
+              SCENARIO: LIVE
             </div>
           </div>
           
-          <nav className="flex gap-4">
+          <nav className="flex gap-1 bg-inst-bg p-1 rounded border border-inst-border">
             <button 
               onClick={() => setView('dashboard')}
-              className={`px-3 py-1 rounded text-sm font-mono transition-colors ${view === 'dashboard' ? 'bg-gray-800 text-orange-400 border border-orange-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`px-4 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-wide transition-all ${view === 'dashboard' ? 'bg-inst-surface text-inst-text border border-inst-border shadow-sm font-bold' : 'text-inst-muted hover:text-inst-text opacity-70 hover:opacity-100'}`}
             >
-              [ DASHBOARD ]
+              Matrix
             </button>
             <button 
               onClick={() => setView('map')}
-              className={`px-3 py-1 rounded text-sm font-mono transition-colors ${view === 'map' ? 'bg-gray-800 text-orange-400 border border-orange-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`px-4 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-wide transition-all ${view === 'map' ? 'bg-inst-surface text-inst-text border border-inst-border shadow-sm font-bold' : 'text-inst-muted hover:text-inst-text opacity-70 hover:opacity-100'}`}
             >
-              [ GLOBAL WEATHER ]
+              Map (Turf.js)
             </button>
           </nav>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      {/* Main Content */}
+      <main className="max-w-[1800px] mx-auto px-4 lg:px-6 mt-6 pb-12">
         
-        {/* Status Bar */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 bg-gray-900 p-4 rounded border border-gray-800">
-          <div className="flex items-center gap-4">
-             <span className="text-xs font-mono text-gray-500">SNAPSHOT:</span>
-             <span className="text-sm font-mono font-bold text-gray-200">{data.timestamp}</span>
+        {/* Data Ticker / Status */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-inst-border pb-4">
+          <div className="flex items-center gap-6 text-[11px] font-mono">
+             <div className="bg-inst-surface px-3 py-1 rounded border border-inst-border">
+               <span className="text-inst-muted mr-2">TIMESTAMP:</span>
+               <span className="text-inst-text font-bold">{data.timestamp.replace('T', ' ')}</span>
+             </div>
+             <div className="hidden sm:block opacity-60">
+               <span className="text-inst-muted mr-2">EPOCH:</span>
+               <span className="text-inst-text">Post-Tariff / Cycle 5</span>
+             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-mono text-gray-500">GLOBAL STATUS:</span>
-            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20">COEXISTENCE BY CONSTRAINT</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-mono text-inst-muted uppercase tracking-widest">System State:</span>
+            <span className="text-[10px] font-bold bg-inst-warning/5 text-inst-warning px-3 py-1 rounded border border-inst-warning/30 uppercase tracking-widest shadow-[0_0_10px_-3px_rgba(245,158,11,0.3)]">
+              Elevated Volatility
+            </span>
           </div>
         </div>
 
         {view === 'dashboard' ? (
-          <div className="space-y-8">
-            {/* Protocol Body */}
-            <section>
-              <h2 className="text-sm font-mono text-gray-500 mb-4 border-b border-gray-800 pb-2 uppercase tracking-wider">01 // Protocol Body</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {data.bodies[BodyType.Protocol].map(v => <VariableCard key={v.id} variable={v} />)}
-              </div>
-            </section>
+          <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            
+            {/* THE 3x3 GRID MATRIX */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* COLUMN 1: PROTOCOL BODY */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-inst-border pb-2">
+                        <h2 className="text-sm font-bold text-inst-text uppercase tracking-[0.2em]">Protocol Body</h2>
+                        <span className="text-[10px] font-mono text-inst-muted">GEOSPHERE</span>
+                    </div>
+                    <div className="flex flex-col gap-4 h-full">
+                        {data.bodies[BodyType.Protocol].map(v => <VariableCard key={v.id} variable={v} />)}
+                    </div>
+                </div>
 
-            {/* Price Body */}
-            <section>
-              <h2 className="text-sm font-mono text-gray-500 mb-4 border-b border-gray-800 pb-2 uppercase tracking-wider">02 // Price Body</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {data.bodies[BodyType.Price].map(v => <VariableCard key={v.id} variable={v} />)}
-              </div>
-            </section>
+                {/* COLUMN 2: PRICE BODY */}
+                 <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-inst-border pb-2">
+                        <h2 className="text-sm font-bold text-inst-text uppercase tracking-[0.2em]">Price Body</h2>
+                        <span className="text-[10px] font-mono text-inst-muted">ATMOSPHERE</span>
+                    </div>
+                    <div className="flex flex-col gap-4 h-full">
+                        {data.bodies[BodyType.Price].map(v => <VariableCard key={v.id} variable={v} />)}
+                    </div>
+                </div>
 
-            {/* Environment Body */}
-            <section>
-              <h2 className="text-sm font-mono text-gray-500 mb-4 border-b border-gray-800 pb-2 uppercase tracking-wider">03 // Environment Body</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {data.bodies[BodyType.Environment].map(v => <VariableCard key={v.id} variable={v} />)}
-              </div>
-            </section>
+                {/* COLUMN 3: ENVIRONMENT BODY */}
+                 <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-inst-border pb-2">
+                        <h2 className="text-sm font-bold text-inst-text uppercase tracking-[0.2em]">Environment Body</h2>
+                        <span className="text-[10px] font-mono text-inst-muted">BIOSPHERE</span>
+                    </div>
+                    <div className="flex flex-col gap-4 h-full">
+                        {data.bodies[BodyType.Environment].map(v => <VariableCard key={v.id} variable={v} />)}
+                    </div>
+                </div>
+            </div>
+            
+            <GeminiAnalysis 
+              data={data} 
+              analysis={analysis}
+              loading={isAnalyzing}
+              onAnalyze={handleAnalyze}
+            />
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Unified Geospatial Weather Map */}
-            <GeospatialMap data={data} />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in duration-300">
+             {/* Left: Map and Report */}
+             <div className="xl:col-span-7 flex flex-col gap-6">
+                <GeospatialMap data={data} />
+                
+                {/* Report persistent here */}
+                <div className="w-full">
+                    <GeminiAnalysis 
+                       data={data} 
+                       analysis={analysis}
+                       loading={isAnalyzing}
+                       onAnalyze={handleAnalyze}
+                    />
+                </div>
+             </div>
 
-            {/* Probabilistic Models */}
-            <MonteCarloChart data={data.simulation} />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono text-gray-500">
-              <div className="p-4 bg-gray-900 rounded border border-gray-800">
-                <strong className="text-orange-500 block mb-1">PROTOCOL FORTRESS</strong>
-                Deep foundation. Immutable. Resilient to external shocks but slow to adapt.
-              </div>
-              <div className="p-4 bg-gray-900 rounded border border-gray-800">
-                <strong className="text-amber-500 block mb-1">PRICE ATMOSPHERE</strong>
-                Volatile. Driven by Macro Jet Streams (Liquidity) and Derivative Storms.
-              </div>
-              <div className="p-4 bg-gray-900 rounded border border-gray-800">
-                <strong className="text-emerald-500 block mb-1">ENVIRONMENT</strong>
-                Physical ground. Energy arbitrage acting as a Load Dam for the grid.
-              </div>
-            </div>
+             {/* Right: Simulation */}
+             <div className="xl:col-span-5 flex flex-col gap-6">
+                <div className="h-[400px]">
+                  <MonteCarloChart data={data.simulation} />
+                </div>
+                
+                <div className="p-5 bg-inst-surface border border-inst-border rounded-md">
+                    <h4 className="text-xs font-bold text-inst-text uppercase tracking-widest border-b border-inst-border pb-2 mb-3">Simulation Parameters</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="block text-[10px] text-inst-muted uppercase">Drift (μ)</span>
+                            <span className="font-mono text-sm text-inst-text">0.26 (Adoption)</span>
+                        </div>
+                        <div>
+                            <span className="block text-[10px] text-inst-muted uppercase">Volatility (σ)</span>
+                            <span className="font-mono text-sm text-inst-text">0.65 (Regime)</span>
+                        </div>
+                        <div>
+                            <span className="block text-[10px] text-inst-muted uppercase">Scenario Date</span>
+                            <span className="font-mono text-sm text-inst-text">Nov 2025</span>
+                        </div>
+                        <div>
+                            <span className="block text-[10px] text-inst-muted uppercase">Model</span>
+                            <span className="font-mono text-sm text-inst-text">Stochastic GBM</span>
+                        </div>
+                    </div>
+                </div>
+             </div>
           </div>
         )}
-
-        {/* AI Analysis Section */}
-        <GeminiAnalysis data={data} />
-
       </main>
     </div>
   );

@@ -7,23 +7,45 @@ interface Props {
 }
 
 export const MetricCard: React.FC<Props> = ({ metric }) => {
+  // Color logic for values
+  const valueColor = metric.hazardLevel === 'Critical' ? 'text-inst-danger' : 'text-inst-text';
+  
   return (
-    <div className="bg-slate-800/40 p-3 rounded border border-slate-700 flex flex-col justify-between hover:border-slate-600 transition-colors relative overflow-hidden group">
-      <div className="flex justify-between items-start mb-2 relative z-10">
-        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{metric.name}</span>
-        {metric.trend === 'intensifying' && <span className="text-red-400 text-[10px] animate-pulse">▲ INTENSIFYING</span>}
-        {metric.trend === 'dissipating' && <span className="text-emerald-400 text-[10px]">▼ DISSIPATING</span>}
-        {metric.trend === 'stable' && <span className="text-slate-500 text-[10px]">= STABLE</span>}
+    <div className="bg-inst-surface border border-inst-border p-3 rounded-sm flex flex-col justify-between hover:border-inst-accent/50 transition-colors group">
+      
+      {/* Header: Name and Trend */}
+      <div className="flex justify-between items-start mb-2">
+        <span className="text-xs font-semibold text-inst-muted uppercase tracking-wide">{metric.name}</span>
+        {metric.trend === 'intensifying' && <span className="text-inst-accent text-xs font-mono">↑ RISING</span>}
+        {metric.trend === 'dissipating' && <span className="text-inst-success text-xs font-mono">↓ EASING</span>}
+        {metric.trend === 'stable' && <span className="text-inst-muted text-xs font-mono">= STEADY</span>}
       </div>
       
-      <div className="flex items-baseline gap-1 relative z-10">
-        <span className="text-lg font-mono font-bold text-slate-200">{metric.value}</span>
-        {metric.unit && <span className="text-[10px] text-slate-500 font-mono">{metric.unit}</span>}
+      {/* Main Value */}
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className={`text-2xl font-mono font-bold ${valueColor} tracking-tight`}>{metric.value}</span>
+        {metric.unit && <span className="text-sm text-inst-muted font-mono">{metric.unit}</span>}
       </div>
       
-      <div className="mt-2 flex justify-between items-end relative z-10">
-        <p className="text-[10px] text-slate-500 leading-tight max-w-[65%]">{metric.description}</p>
-        <StatusBadge level={metric.hazardLevel} />
+      {/* Description */}
+      <div className="mb-2 min-h-[2.5em]">
+        <p className="text-xs text-inst-muted leading-normal">{metric.description}</p>
+      </div>
+
+      {/* Footer: Verification */}
+      <div className="border-t border-inst-border pt-2 mt-auto">
+        {metric.sources && metric.sources.length > 0 ? (
+           <div className="flex flex-wrap gap-1 items-center">
+              <span className="text-[10px] text-inst-muted uppercase font-mono mr-1">Src:</span>
+              {metric.sources.map((source, idx) => (
+                <span key={idx} className="text-[10px] font-mono text-inst-text bg-inst-bg px-1.5 py-0.5 rounded border border-inst-border whitespace-nowrap">
+                  {source}
+                </span>
+              ))}
+           </div>
+        ) : (
+          <span className="text-[10px] text-inst-border font-mono uppercase">Unverified</span>
+        )}
       </div>
     </div>
   );

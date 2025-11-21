@@ -32,7 +32,7 @@ export const WeatherMap: React.FC<Props> = ({ data }) => {
       .attr("stroke-width", 1);
     svg.append("rect").attr("width", width).attr("height", height).attr("fill", "url(#grid)");
 
-    // Helper to get color from status
+    // Helper to get color from hazard level
     const getColor = (level: HazardLevel) => {
       switch(level) {
         case HazardLevel.Nominal: return "#34d399"; // emerald-400
@@ -45,9 +45,9 @@ export const WeatherMap: React.FC<Props> = ({ data }) => {
 
     // Data mapping for visual nodes
     const bodies = [
-      { type: BodyType.Price, y: height * 0.2, label: "PRICE ATMOSPHERE (Macro Jet Stream)" },
-      { type: BodyType.Protocol, y: height * 0.5, label: "PROTOCOL FORTRESS (Immutable)" },
-      { type: BodyType.Environment, y: height * 0.8, label: "ENVIRONMENT (Physical Reality)" }
+      { type: BodyType.Price, y: height * 0.2, label: "PRICE ATMOSPHERE (Heliosphere)" },
+      { type: BodyType.Protocol, y: height * 0.5, label: "PROTOCOL FORTRESS (Geosphere)" },
+      { type: BodyType.Environment, y: height * 0.8, label: "ENVIRONMENT (Biosphere)" }
     ];
 
     // Draw Zones
@@ -109,7 +109,7 @@ export const WeatherMap: React.FC<Props> = ({ data }) => {
         .attr("fill", "#e2e8f0")
         .attr("font-size", "10px")
         .attr("font-family", "monospace")
-        .text(v.name.split(' ')[0]); // Short name
+        .text(v.name.split(' ')[0]); 
         
       // Connections (Reflexivity)
       if (i > 0) {

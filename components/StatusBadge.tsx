@@ -8,20 +8,23 @@ interface Props {
 
 export const StatusBadge: React.FC<Props> = ({ level, condition }) => {
   const styles = {
-    [HazardLevel.Nominal]: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    [HazardLevel.Elevated]: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    [HazardLevel.Critical]: "bg-red-500/10 text-red-400 border-red-500/30",
-    [HazardLevel.Cataclysmic]: "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse",
+    [HazardLevel.Nominal]: "text-emerald-400 border-emerald-800/50 bg-emerald-900/10",
+    [HazardLevel.Elevated]: "text-amber-400 border-amber-800/50 bg-amber-900/10",
+    [HazardLevel.Critical]: "text-red-400 border-red-800/50 bg-red-900/10",
+    [HazardLevel.Cataclysmic]: "text-purple-400 border-purple-800/50 bg-purple-900/10",
   };
 
   return (
     <div className="flex flex-col items-end">
-      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${styles[level]} uppercase tracking-wider mb-1`}>
-        {level}
-      </span>
+      <div className={`px-2 py-1 rounded-sm border ${styles[level]} flex items-center gap-2`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${level === HazardLevel.Nominal ? 'bg-emerald-500' : level === HazardLevel.Critical ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`}></div>
+        <span className="text-[10px] font-mono font-medium uppercase tracking-widest">
+          {level}
+        </span>
+      </div>
       {condition && (
-        <span className="text-[10px] font-bold font-mono text-slate-300 uppercase tracking-tight">
-          [{condition}]
+        <span className="text-[10px] font-mono text-inst-muted uppercase tracking-tight mt-1">
+          Condition: {condition}
         </span>
       )}
     </div>
